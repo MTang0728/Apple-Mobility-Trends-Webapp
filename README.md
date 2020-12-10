@@ -4,10 +4,12 @@ This project aims to provide a dashboard web app for Apple's [COVID-19 Mobility 
 
 ## Current Progress:
 - Created functions to scrape and clean data (currently using country level data only)
-- Visualize mobility trends for a single country
-- added dropdown menu, can now visualize mobility trends for a user selected country
-- added ability to forecast and visualize mobility trends
-- added ability to visualize countries with a map
+- Visualized mobility trends for a single country
+- Added dropdown menu, can now visualize mobility trends for a user selected country
+- Added ability to forecast and visualize mobility trends
+- Added ability to visualize and interact with a map
+- Migrated everything to plotly Dash
+- Trend can now change dynamically by hovering the cursor over a country on the map
 
 **Please see the demo gif below for current progress:**
 
