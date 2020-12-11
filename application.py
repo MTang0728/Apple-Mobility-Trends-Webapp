@@ -212,13 +212,14 @@ most_recent_trends = [trends_countries[c].iloc[-1, :].mean().round(2) for c in c
 color_scale = list(reversed(px.colors.sequential.Oryel))
 # create a choropleth geo map
 fig_map = px.choropleth(locations = country_names,
-                    locationmode = "country names",
-                    color = most_recent_trends,
-                    hover_name = country_names,
-                    color_continuous_scale = color_scale,
-                    projection = "natural earth",
-                    template = 'plotly_dark',
-                    height = 500)
+                        locationmode = "country names",
+                        color = most_recent_trends,
+                        hover_name = country_names,
+                        color_continuous_scale = color_scale,
+                        projection = "natural earth",
+                        template = 'plotly_dark',
+                        height = 500,
+                       )
 # update choropleth map specs
 geo = dict(projection_type = "natural earth",
            countrycolor = "RebeccaPurple", landcolor = 'silver',
@@ -226,6 +227,7 @@ geo = dict(projection_type = "natural earth",
            showland = True
           )
 fig_map.update_geos(geo)
+fig_map.update_layout(margin={"r":20,"t":20,"l":20,"b":20})
 
 #---------------------------------------------------------------------------------------------
 
@@ -233,27 +235,45 @@ available_trends = ['No', 'Yes']
 
 # define dashboard layout
 app.layout = html.Div([
-    dcc.Graph(id = 'world_map',
-              figure = fig_map,
-              hoverData = {'points': [{'hovertext': 'United States'}]}
-             ),
-    html.Div([
-        html.Div('Include a 30-Day Forecast: '),
+    html.Div(style={'backgroundColor': '#222A2A'}, children = [
+        html.H1('Apple Mobility Trend Report',
+                style = {'font-size': '80px',
+                         'width':'35%', 
+                         'display': 'inline-block',
+                         'vertical-align': 'middle'}),
+        dcc.Graph(id = 'world_map',
+                  figure = fig_map,
+                  hoverData = {'points': [{'hovertext': 'United States'}]},
+                  style = {'width':'65%',
+                           'display': 'inline-block',
+                           'vertical-align': 'middle'})
+    ]),
+    
+    html.Div(style={'backgroundColor': 'rgb(136,204,0)'}, children = [
+        html.Div('Include a 30-Day Forecast: ',
+                 style = {'font-size': '20px',
+                          'textAlign': 'right',
+                          'width':'30%', 
+                          'display': 'inline-block'}),
         dcc.RadioItems(id = 'include_forecast',
                        options = [{'label': i, 'value': i} for i in available_trends],
                        value = 'No',
-                       labelStyle = {'display': 'inline-block'}
-                      ),
-             ]),
-    dcc.DatePickerRange(id = 'select_date',
-                        clearable = True,
-                        number_of_months_shown = 2,
-                        minimum_nights = 1,
-                        start_date = trends_countries.index[0],
-                        end_date = trends_countries.index[-1],
-                        min_date_allowed = trends_countries.index[0],
-                        display_format = 'Y-M-D'
-                        ),
+                       style = {'font-size': '20px',
+                                'textAlign': 'center',
+                                'width':'10%',
+                                'display': 'inline-block'}),
+        dcc.DatePickerRange(id = 'select_date',
+                            clearable = True,
+                            number_of_months_shown = 2,
+                            minimum_nights = 1,
+                            start_date = trends_countries.index[0],
+                            end_date = trends_countries.index[-1],
+                            min_date_allowed = trends_countries.index[0],
+                            display_format = 'Y-M-D',
+                            style = {'align': 'center',
+                                     'display': 'inline-block'})
+    ]),
+    
     dcc.Graph(id = 'trend')
 ])
 
