@@ -121,6 +121,9 @@ def add_trend(country, trend, forecast, include_forecast, start_date, end_date):
     
     # create a line plot
     fig = px.line(template = 'plotly_dark')
+    fig.update_xaxes(title='Date')
+    fig.update_yaxes(title='Mobilitys % Change From Baseline')
+    
     # there are 4 scenarios in total:
     # 1 - while include_forecast is ON, dates are picked from historical timeline
     # 2 - while include_forecast is ON, dates are picked from forecasted timeline
@@ -185,7 +188,9 @@ def add_trend(country, trend, forecast, include_forecast, start_date, end_date):
                             name = transportation)
             pass
         pass
-        
+    
+    fig.update_layout(margin=dict(l=50, r=100, t=15, b=30))
+    
     return fig
 
 #---------------------------------------------------------------------------------------------
@@ -218,63 +223,104 @@ fig_map = px.choropleth(locations = country_names,
                         color_continuous_scale = color_scale,
                         projection = "natural earth",
                         template = 'plotly_dark',
-                        height = 500,
+                        height = 400,
                        )
 # update choropleth map specs
 geo = dict(projection_type = "natural earth",
-           countrycolor = "RebeccaPurple", landcolor = 'silver',
+           countrycolor = "RebeccaPurple", landcolor = 'rgb(17,17,17)',
            showocean = True, oceancolor = "rgb(136,204,238)", lakecolor = "rgb(136,204,238)",
            showland = True
           )
 fig_map.update_geos(geo)
-fig_map.update_layout(margin={"r":20,"t":20,"l":20,"b":20})
+fig_map.update_layout(margin={"l":50,"r":20,"t":20,"b":20})
 
 #---------------------------------------------------------------------------------------------
 
 available_trends = ['No', 'Yes']
 
 # define dashboard layout
-app.layout = html.Div([
-    html.Div(style={'backgroundColor': '#222A2A'}, children = [
-        html.H1('Apple Mobility Trend Report',
-                style = {'font-size': '80px',
-                         'width':'35%', 
+app.layout = html.Div(style={'backgroundColor': 'rgb(17,17,17)'}, children = [
+    html.Div(style={'backgroundColor': 'rgb(17,17,17)'}, children = [
+        html.H1('Apple Mobility Trends Dashboard',
+                style = {'color':'white',
+                         'font-family':'Helvetica',
+                         'font-size': '85px',
+                         'width':'27%', 
                          'display': 'inline-block',
-                         'vertical-align': 'middle'}),
+                         'vertical-align': 'middle',
+                         'margin-left': '50px',
+                         'margin-right': '10px',
+                         'margin-top': '10px',
+                         'margin-bottom': '10px'}),
         dcc.Graph(id = 'world_map',
                   figure = fig_map,
                   hoverData = {'points': [{'hovertext': 'United States'}]},
-                  style = {'width':'65%',
+                  style = {'width':'68%',
                            'display': 'inline-block',
-                           'vertical-align': 'middle'})
+                           'vertical-align': 'middle',
+                           'align': 'left'})
     ]),
     
-    html.Div(style={'backgroundColor': 'rgb(136,204,0)'}, children = [
+    html.Div(style={'backgroundColor': 'rgb(17,17,17)'}, children = [
         html.Div('Include a 30-Day Forecast: ',
-                 style = {'font-size': '20px',
+                 style = {'color':'white',
+                          'font-family':'Helvetica',
+                          'font-size': '20px',
                           'textAlign': 'right',
-                          'width':'30%', 
+                          'width':'45%', 
                           'display': 'inline-block'}),
         dcc.RadioItems(id = 'include_forecast',
                        options = [{'label': i, 'value': i} for i in available_trends],
                        value = 'No',
-                       style = {'font-size': '20px',
-                                'textAlign': 'center',
+                       labelStyle = {'display': 'inline-block', 'cursor': 'pointer', 'margin-right': '30px'},
+                       style = {'color':'white',
+                                'font-family':'Helvetica',
+                                'font-size': '20px',
+                                'textAlign': 'left',
                                 'width':'10%',
-                                'display': 'inline-block'}),
+                                'display': 'inline-block',
+                                'margin-left': '30px'
+                                }),
         dcc.DatePickerRange(id = 'select_date',
                             clearable = True,
                             number_of_months_shown = 2,
                             minimum_nights = 1,
+                            day_size = 30,
                             start_date = trends_countries.index[0],
                             end_date = trends_countries.index[-1],
                             min_date_allowed = trends_countries.index[0],
                             display_format = 'Y-M-D',
-                            style = {'align': 'center',
-                                     'display': 'inline-block'})
+                            style = {'font-family':'Helvetica',
+                                     'align': 'center',
+                                     'display': 'inline-block',
+                                     'margin-left': '20px'})
     ]),
     
-    dcc.Graph(id = 'trend')
+    html.Div(children = [
+        html.Div(style = {'width':'2.5%',
+                          'display': 'inline-block'}),
+        dcc.Graph(id = 'trend', style = {'width':'95%',
+                                  'align': 'center',
+                                  'display': 'inline-block'}),
+        html.Div(style = {'width':'2.55%',
+                          'display': 'inline-block'})
+    ]),
+    html.Div(children = [ 
+        html.Div(children = ['Data sourced from Apple Mobility Trends Reports: https://covid19.apple.com/mobility'], 
+                    style = {'color':'white',
+                             'font-family':'Helvetica',
+                             'textAlign': 'left',
+                             'width':'49%',
+                             'margin-left': '20px',
+                             'display': 'inline-block'}),
+        html.Div(children = ['Designed and developed by Michael Tang'], 
+                    style = {'color':'white',
+                             'font-family':'Helvetica',
+                             'textAlign': 'right',
+                             'width':'48%',
+                             'margin-right': '20px',
+                             'display': 'inline-block'})
+        ]),
 ])
 
 #---------------------------------------------------------------------------------------------
