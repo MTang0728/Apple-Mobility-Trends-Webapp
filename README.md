@@ -10,6 +10,8 @@ This project aims to provide a dashboard web app for Apple's [COVID-19 Mobility 
 - Added ability to visualize and interact with a map
 - Migrated everything to plotly Dash
 - Trend can now change dynamically by hovering the cursor over a country on the map
+- Added a RadioItem to turn ON and OFF the forecast
+- Added a Datapicker that allows user to select a time window, trends displayed change dynamically based on selected dates
 
 **Please see the demo gif below for current progress:**
 

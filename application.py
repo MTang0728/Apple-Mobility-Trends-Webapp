@@ -6,6 +6,9 @@ from dash.dependencies import Input, Output
 import pandas as pd
 import numpy as np
 
+from datetime import datetime
+from datetime import timedelta
+
 from fbprophet import Prophet
 
 import plotly.express as px
@@ -39,6 +42,8 @@ def clean_data(trends):
     trends = trends - 100
     # transpose dataframe so indices are dates
     trends = trends.transpose()
+    # change index to datetime format
+    trends.index = pd.to_datetime(trends.index)
     
     return trends, country_names
 
@@ -92,7 +97,7 @@ def get_country_forecast(forecast_countries, country_names, country_name = 'Unit
         
         return forecast_country
 
-def add_trend(country, trend, forecast, include_forecast):
+def add_trend(country, trend, forecast, include_forecast, start_date, end_date):
     """creates a line plot and adds historical and forecasted trend based on country
     Input:
         country (string): country name
@@ -103,6 +108,8 @@ def add_trend(country, trend, forecast, include_forecast):
                               hierarchical columns by 'country' and 'transportation type'
                               indexed are dates
         include_forecast (boolean): whether or not to include forecasted trends
+        start_date (datetime): trend start date in %Y-%m-%d, e.g datetime(2020, 1, 14, 0, 0)
+        end_date (datetime): trend end date in %Y-%m-%d, e.g datetime(2021, 2, 2, 0, 0)
     Output 
         fig (plotly express figure): line plot
     """
@@ -111,36 +118,91 @@ def add_trend(country, trend, forecast, include_forecast):
     # get historical and forecasted trends for a country
     country_trend = get_country_trend(trend, country_names, country)
     country_forecast = get_country_forecast(forecast, country_names, country)
+    
     # create a line plot
     fig = px.line(template = 'plotly_dark')
-    # loop through transportation types and add corresponding trend lines
-    for idx, transportation in enumerate(country_trend.columns):
-        # add historical trend line
-        fig.add_scatter(x = country_trend.index, 
-                        y = country_trend[transportation],
-                        line = dict(color = line_color[idx]),
-                        name = transportation)
-        # add forecasted trend line if include_forecast is True
-        if include_forecast:
-            fig.add_scatter(x = country_forecast.index,
-                            y = country_forecast[transportation],
-                            line = dict(color = line_color[idx],
-                                        dash='dash'),
-                            showlegend = False)
-            pass
-        else:
-            pass
+    # there are 4 scenarios in total:
+    # 1 - while include_forecast is ON, dates are picked from historical timeline
+    # 2 - while include_forecast is ON, dates are picked from forecasted timeline
+    # 3 - while include_forecast is ON, dates span both historical and forecasted timeline
+    # 4 - while include_forecast is OFF, dates could only be picked from historical timeline
     
+    # figure response for the first 3 scenarios where include_forecast is ON
+    if include_forecast:
+        # scenario 1, datepicker end date in historical timeline
+        if end_date in country_trend.index:
+            # fitler data based on selected date
+            filtered_trend = country_trend.loc[start_date:end_date, :]
+            # add trends
+            for idx, transportation in enumerate(filtered_trend.columns):
+                fig.add_scatter(x = filtered_trend.index, 
+                                y = filtered_trend[transportation],
+                                line = dict(color = line_color[idx]),
+                                name = transportation)
+                pass
+            pass
+        # scenario 2, datepicker start date in forecasted timeline
+        elif start_date in country_forecast.index:
+            # fitler data based on selected date
+            filtered_forecast = country_forecast.loc[start_date:end_date, :]
+            # add trends
+            for idx, transportation in enumerate(filtered_forecast.columns):
+                fig.add_scatter(x = filtered_forecast.index, 
+                                y = filtered_forecast[transportation],
+                                line = dict(color = line_color[idx]),
+                                name = transportation)
+                pass
+            pass
+        # scenario 3, datepicker start date in historical timeline
+        # datepicker end date in forecasted timeline
+        else:
+            # fitler data based on selected date
+            filtered_trend = country_trend.loc[start_date:, :]
+            filtered_forecast = country_forecast.loc[:end_date, :]
+            # add trends for both historical data and forecasted data
+            for idx, transportation in enumerate(filtered_trend.columns):
+                fig.add_scatter(x = filtered_trend.index, 
+                                y = filtered_trend[transportation],
+                                line = dict(color = line_color[idx]),
+                                name = transportation)
+                fig.add_scatter(x = filtered_forecast.index, 
+                                y = filtered_forecast[transportation],
+                                line = dict(color = line_color[idx],
+                                            dash='dash'),
+                                showlegend = False)
+                pass
+            pass
+        pass
+    # figure response for the 4th scenario where include_forecast is OFF
+    else:
+        # fitler data based on selected date
+        filtered_trend = country_trend.loc[start_date:end_date, :]
+        # add trends
+        for idx, transportation in enumerate(filtered_trend.columns):
+            fig.add_scatter(x = filtered_trend.index, 
+                            y = filtered_trend[transportation],
+                            line = dict(color = line_color[idx]),
+                            name = transportation)
+            pass
+        pass
+        
     return fig
 
 #---------------------------------------------------------------------------------------------
 
 # read in the historical trend data and forecasted trend data
-trend_data = pd.read_csv('./data/applemobilitytrends-2020-12-08.csv', 
-                         parse_dates = True, 
+trend_data = pd.read_csv('./data/applemobilitytrends-2020-12-09.csv',
                          low_memory = False)
 trends_countries, country_names = clean_data(trend_data)
-forecast_countries = pd.read_csv('./data/forecasted_trends.csv', header = [0,1], index_col = 0)
+forecast_countries = pd.read_csv('./data/forecasted_trends.csv', 
+                                 parse_dates = True,
+                                 header = [0,1], 
+                                 index_col = 0)
+# convert index to string for both historical and forecasted data
+trends_countries_index = [str(date)[:10] for date in trends_countries.index]
+trends_countries.index = trends_countries_index
+forecast_countries_index = [str(date)[:10] for date in forecast_countries.index]
+forecast_countries.index = forecast_countries_index
 
 #---------------------------------------------------------------------------------------------
 
@@ -183,23 +245,66 @@ app.layout = html.Div([
                        labelStyle = {'display': 'inline-block'}
                       ),
              ]),
+    dcc.DatePickerRange(id = 'select_date',
+                        clearable = True,
+                        number_of_months_shown = 2,
+                        minimum_nights = 1,
+                        start_date = trends_countries.index[0],
+                        end_date = trends_countries.index[-1],
+                        min_date_allowed = trends_countries.index[0],
+                        display_format = 'Y-M-D'
+                        ),
     dcc.Graph(id = 'trend')
 ])
 
 #---------------------------------------------------------------------------------------------
 
+# callback for updating datepicker component based on include_forecast radioitem
+@app.callback(
+    [Output(component_id = 'select_date', component_property = 'max_date_allowed'),
+     Output(component_id = 'select_date', component_property = 'end_date'),
+     Output(component_id = 'select_date', component_property = 'start_date')],
+    Input(component_id = 'include_forecast', component_property = 'value')
+)
+def update_datepicker_range(radioitem_value):
+    # convert include forecast selection to boolean
+    include_forecast = True if radioitem_value == 'Yes' else False
+    # define a 1 day deltatime object
+    delta = timedelta(days=1)
+    # update maxmium allowed date on datepicker based on include_forecast
+    if include_forecast == True:
+        # fix 1-day-short bug with the max_date_allowed property by adding 1 day
+        max_date = datetime.strptime(forecast_countries.index[-1], '%Y-%m-%d')
+        max_date = (max_date + delta).strftime('%Y-%m-%d')
+        
+        return max_date, forecast_countries.index[-1], trends_countries.index[0]
+    else:
+        # fix 1-day-short bug with  the max_date_allowed property by adding 1 day
+        max_date = datetime.strptime(trends_countries.index[-1], '%Y-%m-%d')
+        max_date = (max_date + delta).strftime('%Y-%m-%d')
+        
+        return max_date, trends_countries.index[-1], trends_countries.index[0]
+
+# callback for updating graph component based on selected country on map, 
+# include_forecast radioitem, and date range on datepicker 
 @app.callback(
     Output(component_id = 'trend', component_property = 'figure'),
     [Input(component_id = 'world_map', component_property = 'hoverData'),
-     Input(component_id = 'include_forecast', component_property = 'value')]
+     Input(component_id = 'include_forecast', component_property = 'value'),
+     Input(component_id = 'select_date', component_property = 'start_date'),
+     Input(component_id = 'select_date', component_property = 'end_date')]
 )
-def update_output_div(input_map_value, input_radioitem_value):
+def update_trend(map_value, radioitem_value, datepicker_start, datepicker_end):
     # get country name from hoverData
-    country = input_map_value['points'][0]['hovertext']
+    country = map_value['points'][0]['hovertext']
     # convert include forecast selection to boolean
-    include_forecast = True if input_radioitem_value == 'Yes' else False
+    include_forecast = True if radioitem_value == 'Yes' else False
+    # rename input variables
+    start_time = datepicker_start
+    end_time = datepicker_end
     
-    return add_trend(country, trends_countries, forecast_countries, include_forecast)
+    return add_trend(country, trends_countries, forecast_countries, 
+                     include_forecast, start_time, end_time)
 
 if __name__ == '__main__':
     app.run_server(debug = True)
