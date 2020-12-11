@@ -189,7 +189,23 @@ def add_trend(country, trend, forecast, include_forecast, start_date, end_date):
             pass
         pass
     
-    fig.update_layout(margin=dict(l=50, r=100, t=15, b=30))
+    fig.update_layout(margin = dict(l = 50, r = 30, t = 20, b = 30, pad = 20),
+                      legend = dict(x = 0.8, y = 1.1,
+                                    itemclick = False,
+                                    title = dict(text = 'Transportation Types:',
+                                                 side = 'top',
+                                                 font = dict(family = 'Arial', 
+                                                             size = 18)),
+                                    orientation="h",
+                                    font = dict(family = 'Arial', 
+                                                size = 15)
+                                   ),
+                      font = dict(family = 'Arial',
+                                  size = 15),
+                      hoverlabel = dict(bordercolor = 'white',
+                                        font = dict(family = 'Arial',
+                                                    size = 15))
+                     )
     
     return fig
 
@@ -213,13 +229,20 @@ forecast_countries.index = forecast_countries_index
 
 # define most recent trend by taking the mean of transportation types
 most_recent_trends = [trends_countries[c].iloc[-1, :].mean().round(2) for c in country_names]
+hover_df_colname  = 'Avg % Change on: ' + trends_countries.index[-1]
+hover_df = pd.DataFrame(data = np.array(most_recent_trends)/100, 
+                        index = country_names, 
+                        columns = [hover_df_colname])
+# hover_df = hover_df.transpose()
 # use reversed color scale for map
 color_scale = list(reversed(px.colors.sequential.Oryel))
 # create a choropleth geo map
-fig_map = px.choropleth(locations = country_names,
+fig_map = px.choropleth(data_frame = hover_df,
+                        locations = country_names,
                         locationmode = "country names",
-                        color = most_recent_trends,
+                        color = hover_df_colname,
                         hover_name = country_names,
+                        hover_data = {hover_df_colname:':.2%'},
                         color_continuous_scale = color_scale,
                         projection = "natural earth",
                         template = 'plotly_dark',
@@ -227,12 +250,28 @@ fig_map = px.choropleth(locations = country_names,
                        )
 # update choropleth map specs
 geo = dict(projection_type = "natural earth",
-           countrycolor = "RebeccaPurple", landcolor = 'rgb(17,17,17)',
+           countrycolor = "RebeccaPurple",
            showocean = True, oceancolor = "rgb(136,204,238)", lakecolor = "rgb(136,204,238)",
-           showland = True
+           showland = True, landcolor = 'rgb(255,255,255)'
           )
 fig_map.update_geos(geo)
-fig_map.update_layout(margin={"l":50,"r":20,"t":20,"b":20})
+# update map layout
+fig_map.update_layout(margin = {"l":50,"r":20,"t":20,"b":20},
+                      hoverlabel = dict(bordercolor = 'white',
+                                       font = dict(family = 'Arial',
+                                                   size = 15)
+                                      ),
+                      coloraxis = dict(colorbar = dict(title = dict(text = '',
+                                                                    font = dict(family = 'Arial', 
+                                                                                size = 18),
+                                                                    side = 'right'
+                                                                   ),
+                                                       x = 1, 
+                                                       tickformat = '%{n}f',
+                                                       tickwidth = 100
+                                                      )
+                                      )
+                      )
 
 #---------------------------------------------------------------------------------------------
 
@@ -245,7 +284,7 @@ app.layout = html.Div(style={'backgroundColor': 'rgb(17,17,17)'}, children = [
                 style = {'color':'white',
                          'font-family':'Helvetica',
                          'font-size': '85px',
-                         'width':'27%', 
+                         'width':'30%', 
                          'display': 'inline-block',
                          'vertical-align': 'middle',
                          'margin-left': '50px',
@@ -255,7 +294,7 @@ app.layout = html.Div(style={'backgroundColor': 'rgb(17,17,17)'}, children = [
         dcc.Graph(id = 'world_map',
                   figure = fig_map,
                   hoverData = {'points': [{'hovertext': 'United States'}]},
-                  style = {'width':'68%',
+                  style = {'width':'62%',
                            'display': 'inline-block',
                            'vertical-align': 'middle',
                            'align': 'left'})
@@ -267,17 +306,17 @@ app.layout = html.Div(style={'backgroundColor': 'rgb(17,17,17)'}, children = [
                           'font-family':'Helvetica',
                           'font-size': '20px',
                           'textAlign': 'right',
-                          'width':'45%', 
+                          'width':'20%', 
                           'display': 'inline-block'}),
         dcc.RadioItems(id = 'include_forecast',
-                       options = [{'label': i, 'value': i} for i in available_trends],
+                       options = [{'label': " " + i, 'value': i} for i in available_trends],
                        value = 'No',
                        labelStyle = {'display': 'inline-block', 'cursor': 'pointer', 'margin-right': '30px'},
                        style = {'color':'white',
                                 'font-family':'Helvetica',
                                 'font-size': '20px',
                                 'textAlign': 'left',
-                                'width':'10%',
+                                'width':'30%',
                                 'display': 'inline-block',
                                 'margin-left': '30px'
                                 }),
@@ -300,26 +339,41 @@ app.layout = html.Div(style={'backgroundColor': 'rgb(17,17,17)'}, children = [
         html.Div(style = {'width':'2.5%',
                           'display': 'inline-block'}),
         dcc.Graph(id = 'trend', style = {'width':'95%',
-                                  'align': 'center',
+                                  'align': 'right',
                                   'display': 'inline-block'}),
-        html.Div(style = {'width':'2.55%',
+        html.Div(style = {'width':'2.5%',
                           'display': 'inline-block'})
     ]),
     html.Div(children = [ 
-        html.Div(children = ['Data sourced from Apple Mobility Trends Reports: https://covid19.apple.com/mobility'], 
-                    style = {'color':'white',
-                             'font-family':'Helvetica',
-                             'textAlign': 'left',
-                             'width':'49%',
-                             'margin-left': '20px',
-                             'display': 'inline-block'}),
-        html.Div(children = ['Designed and developed by Michael Tang'], 
-                    style = {'color':'white',
-                             'font-family':'Helvetica',
-                             'textAlign': 'right',
-                             'width':'48%',
-                             'margin-right': '20px',
-                             'display': 'inline-block'})
+        dcc.Markdown(children = ['Data sourced from [Apple Mobility Trends Reports](https://covid19.apple.com/mobility)'], 
+                     style = {'color':'white',
+                              'font-family':'Helvetica',
+                              'font-size': '12px',
+                              'textAlign': 'left',
+                              'width':'23%',
+                              'margin-left': '20px',
+                              'display': 'inline-block'}),
+        dcc.Markdown(children = ['''
+                                 These graphs are interactive and responsive. **Hover** over points to see their values,
+                                 
+                                 **click** and **drag** to zoom, **hold down** shift, and **click** and **drag** to pan.
+                                 '''], 
+                     style = {'color':'white',
+                              'font-family':'Helvetica',
+                              'font-size': '13px',
+                              'textAlign': 'center',
+                              'width':'50%',
+                              'margin-left': '10px',
+                              'margin-right': '10px',
+                              'display': 'inline-block'}),
+        dcc.Markdown(children = ['Designed and developed by [Michael Tang](http://www.linkedin.com/in/mtang0728)'], 
+                     style = {'color':'white',
+                              'font-family':'Helvetica',
+                              'font-size': '12px',
+                              'textAlign': 'right',
+                              'width':'22%',
+                              'margin-right': '25px',
+                              'display': 'inline-block'})
         ]),
 ])
 
