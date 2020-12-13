@@ -2,7 +2,7 @@
 
 This project aims to provide a dashboard web app for Apple's [COVID-19 Mobility Trend Report](https://covid19.apple.com/mobility)
 
-The web app is now [online](http://applemobilitytrenddashboard-env.eba-rpfg2pfg.us-east-1.elasticbeanstalk.com)
+The web app is now [online](http://applemobilitydash-env.eba-bywaivsk.us-east-1.elasticbeanstalk.com)
 
 ## Current Progress:
 - Created functions to scrape and clean data (currently using country level data only)
