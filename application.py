@@ -1,3 +1,5 @@
+import boto3
+
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -9,14 +11,12 @@ import numpy as np
 from datetime import datetime
 from datetime import timedelta
 
-from fbprophet import Prophet
-
 import plotly.express as px
-import plotly.graph_objects as go
 
 #---------------------------------------------------------------------------------------------
 
 app = dash.Dash(__name__)
+application = app.server
 
 #---------------------------------------------------------------------------------------------
 
@@ -102,8 +102,8 @@ def add_trend(country, trend, forecast, include_forecast, start_date, end_date):
     Input:
         country (string): country name
         trend (dataframe): historical trends for all countries
-                           hierarchical columns by 'country' and 'transportation type'
-                           indexed are dates
+                          hierarchical columns by 'country' and 'transportation type'
+                          indexed are dates
         forecast (dataframe): forecasted trends for all countries
                               hierarchical columns by 'country' and 'transportation type'
                               indexed are dates
@@ -199,7 +199,7 @@ def add_trend(country, trend, forecast, include_forecast, start_date, end_date):
                                     orientation="h",
                                     font = dict(family = 'Arial', 
                                                 size = 15)
-                                   ),
+                                  ),
                       font = dict(family = 'Arial',
                                   size = 15),
                       hoverlabel = dict(bordercolor = 'white',
@@ -211,14 +211,25 @@ def add_trend(country, trend, forecast, include_forecast, start_date, end_date):
 
 #---------------------------------------------------------------------------------------------
 
-# read in the historical trend data and forecasted trend data
-trend_data = pd.read_csv('./data/applemobilitytrends-2020-12-09.csv',
+# define bucket name
+bucket = "applemobilitytrends"
+# define s3 client
+s3 = boto3.client('s3') 
+# define file names
+historical_file_name = 'applemobilitytrends-2020-12-09.csv'
+forecast_file_name = 'forecasted_trends.csv'
+# load historical data from s3
+data_obj = s3.get_object(Bucket= bucket, Key= historical_file_name) 
+trend_data = pd.read_csv(data_obj['Body'], 
                          low_memory = False)
 trends_countries, country_names = clean_data(trend_data)
-forecast_countries = pd.read_csv('./data/forecasted_trends.csv', 
+# load forecasted data from s3
+data_obj = s3.get_object(Bucket= bucket, Key= forecast_file_name)
+forecast_countries = pd.read_csv(data_obj['Body'], 
                                  parse_dates = True,
                                  header = [0,1], 
                                  index_col = 0)
+
 # convert index to string for both historical and forecasted data
 trends_countries_index = [str(date)[:10] for date in trends_countries.index]
 trends_countries.index = trends_countries_index
@@ -247,28 +258,28 @@ fig_map = px.choropleth(data_frame = hover_df,
                         projection = "natural earth",
                         template = 'plotly_dark',
                         height = 400,
-                       )
+                      )
 # update choropleth map specs
 geo = dict(projection_type = "natural earth",
-           countrycolor = "RebeccaPurple",
-           showocean = True, oceancolor = "rgb(136,204,238)", lakecolor = "rgb(136,204,238)",
-           showland = True, landcolor = 'rgb(255,255,255)'
+          countrycolor = "RebeccaPurple",
+          showocean = True, oceancolor = "rgb(136,204,238)", lakecolor = "rgb(136,204,238)",
+          showland = True, landcolor = 'rgb(255,255,255)'
           )
 fig_map.update_geos(geo)
 # update map layout
 fig_map.update_layout(margin = {"l":50,"r":20,"t":20,"b":20},
                       hoverlabel = dict(bordercolor = 'white',
-                                       font = dict(family = 'Arial',
-                                                   size = 15)
+                                      font = dict(family = 'Arial',
+                                                  size = 15)
                                       ),
                       coloraxis = dict(colorbar = dict(title = dict(text = '',
                                                                     font = dict(family = 'Arial', 
                                                                                 size = 18),
                                                                     side = 'right'
-                                                                   ),
-                                                       x = 1, 
-                                                       tickformat = '%{n}f',
-                                                       tickwidth = 100
+                                                                  ),
+                                                      x = 1, 
+                                                      tickformat = '%{n}f',
+                                                      tickwidth = 100
                                                       )
                                       )
                       )
@@ -295,9 +306,9 @@ app.layout = html.Div(style={'backgroundColor': 'rgb(17,17,17)'}, children = [
                   figure = fig_map,
                   hoverData = {'points': [{'hovertext': 'United States'}]},
                   style = {'width':'62%',
-                           'display': 'inline-block',
-                           'vertical-align': 'middle',
-                           'align': 'left'})
+                          'display': 'inline-block',
+                          'vertical-align': 'middle',
+                          'align': 'left'})
     ]),
     
     html.Div(style={'backgroundColor': 'rgb(17,17,17)'}, children = [
@@ -309,10 +320,10 @@ app.layout = html.Div(style={'backgroundColor': 'rgb(17,17,17)'}, children = [
                           'width':'20%', 
                           'display': 'inline-block'}),
         dcc.RadioItems(id = 'include_forecast',
-                       options = [{'label': " " + i, 'value': i} for i in available_trends],
-                       value = 'No',
-                       labelStyle = {'display': 'inline-block', 'cursor': 'pointer', 'margin-right': '30px'},
-                       style = {'color':'white',
+                      options = [{'label': " " + i, 'value': i} for i in available_trends],
+                      value = 'No',
+                      labelStyle = {'display': 'inline-block', 'cursor': 'pointer', 'margin-right': '30px'},
+                      style = {'color':'white',
                                 'font-family':'Helvetica',
                                 'font-size': '20px',
                                 'textAlign': 'left',
@@ -426,5 +437,6 @@ def update_trend(map_value, radioitem_value, datepicker_start, datepicker_end):
     return add_trend(country, trends_countries, forecast_countries, 
                      include_forecast, start_time, end_time)
 
+
 if __name__ == '__main__':
-    app.run_server(debug = True)
+    application.run_server()
