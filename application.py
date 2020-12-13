@@ -216,7 +216,7 @@ bucket = "applemobilitytrends"
 # define s3 client
 s3 = boto3.client('s3') 
 # define file names
-historical_file_name = 'applemobilitytrends-2020-12-09.csv'
+historical_file_name = 'applemobilitytrends.csv'
 forecast_file_name = 'forecasted_trends.csv'
 # load historical data from s3
 data_obj = s3.get_object(Bucket= bucket, Key= historical_file_name) 
@@ -436,7 +436,6 @@ def update_trend(map_value, radioitem_value, datepicker_start, datepicker_end):
     
     return add_trend(country, trends_countries, forecast_countries, 
                      include_forecast, start_time, end_time)
-
 
 if __name__ == '__main__':
     application.run_server()
