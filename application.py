@@ -1,5 +1,3 @@
-import boto3
-
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -16,7 +14,6 @@ import plotly.express as px
 #---------------------------------------------------------------------------------------------
 
 app = dash.Dash(__name__)
-application = app.server
 
 #---------------------------------------------------------------------------------------------
 
@@ -44,7 +41,7 @@ def clean_data(trends):
     trends = trends.transpose()
     # change index to datetime format
     trends.index = pd.to_datetime(trends.index)
-    
+
     return trends, country_names
 
 def get_country_trend(trends_countries, country_names, country_name = 'United States'):
@@ -63,13 +60,13 @@ def get_country_trend(trends_countries, country_names, country_name = 'United St
     # return corresponding data if yet
     if country_name in country_names:
         trends_country = trends_countries[country_name]
-        
+
         return trends_country
     # return US data if not
     else:
         print('No Data available for ' + country_name + '.')
         trends_country = trends_countries['United States']
-        
+
         return trends_country
 
 def get_country_forecast(forecast_countries, country_names, country_name = 'United States'):
@@ -88,13 +85,13 @@ def get_country_forecast(forecast_countries, country_names, country_name = 'Unit
     # return corresponding data if yet
     if country_name in country_names:
         forecast_country = forecast_countries[country_name]
-        
+
         return forecast_country
     # return US data if not
     else:
         print('No Data available for ' + country_name + '.')
         forecast_country = forecast_countries['United States']
-        
+
         return forecast_country
 
 def add_trend(country, trend, forecast, include_forecast, start_date, end_date):
@@ -110,7 +107,7 @@ def add_trend(country, trend, forecast, include_forecast, start_date, end_date):
         include_forecast (boolean): whether or not to include forecasted trends
         start_date (datetime): trend start date in %Y-%m-%d, e.g datetime(2020, 1, 14, 0, 0)
         end_date (datetime): trend end date in %Y-%m-%d, e.g datetime(2021, 2, 2, 0, 0)
-    Output 
+    Output
         fig (plotly express figure): line plot
     """
     # define line colors for 3 transportation types
@@ -118,18 +115,18 @@ def add_trend(country, trend, forecast, include_forecast, start_date, end_date):
     # get historical and forecasted trends for a country
     country_trend = get_country_trend(trend, country_names, country)
     country_forecast = get_country_forecast(forecast, country_names, country)
-    
+
     # create a line plot
     fig = px.line(template = 'plotly_dark')
     fig.update_xaxes(title='Date')
     fig.update_yaxes(title='Mobilitys % Change From Baseline')
-    
+
     # there are 4 scenarios in total:
     # 1 - while include_forecast is ON, dates are picked from historical timeline
     # 2 - while include_forecast is ON, dates are picked from forecasted timeline
     # 3 - while include_forecast is ON, dates span both historical and forecasted timeline
     # 4 - while include_forecast is OFF, dates could only be picked from historical timeline
-    
+
     # figure response for the first 3 scenarios where include_forecast is ON
     if include_forecast:
         # scenario 1, datepicker end date in historical timeline
@@ -138,7 +135,7 @@ def add_trend(country, trend, forecast, include_forecast, start_date, end_date):
             filtered_trend = country_trend.loc[start_date:end_date, :]
             # add trends
             for idx, transportation in enumerate(filtered_trend.columns):
-                fig.add_scatter(x = filtered_trend.index, 
+                fig.add_scatter(x = filtered_trend.index,
                                 y = filtered_trend[transportation],
                                 line = dict(color = line_color[idx]),
                                 name = transportation)
@@ -150,7 +147,7 @@ def add_trend(country, trend, forecast, include_forecast, start_date, end_date):
             filtered_forecast = country_forecast.loc[start_date:end_date, :]
             # add trends
             for idx, transportation in enumerate(filtered_forecast.columns):
-                fig.add_scatter(x = filtered_forecast.index, 
+                fig.add_scatter(x = filtered_forecast.index,
                                 y = filtered_forecast[transportation],
                                 line = dict(color = line_color[idx]),
                                 name = transportation)
@@ -164,11 +161,11 @@ def add_trend(country, trend, forecast, include_forecast, start_date, end_date):
             filtered_forecast = country_forecast.loc[:end_date, :]
             # add trends for both historical data and forecasted data
             for idx, transportation in enumerate(filtered_trend.columns):
-                fig.add_scatter(x = filtered_trend.index, 
+                fig.add_scatter(x = filtered_trend.index,
                                 y = filtered_trend[transportation],
                                 line = dict(color = line_color[idx]),
                                 name = transportation)
-                fig.add_scatter(x = filtered_forecast.index, 
+                fig.add_scatter(x = filtered_forecast.index,
                                 y = filtered_forecast[transportation],
                                 line = dict(color = line_color[idx],
                                             dash='dash'),
@@ -182,22 +179,22 @@ def add_trend(country, trend, forecast, include_forecast, start_date, end_date):
         filtered_trend = country_trend.loc[start_date:end_date, :]
         # add trends
         for idx, transportation in enumerate(filtered_trend.columns):
-            fig.add_scatter(x = filtered_trend.index, 
+            fig.add_scatter(x = filtered_trend.index,
                             y = filtered_trend[transportation],
                             line = dict(color = line_color[idx]),
                             name = transportation)
             pass
         pass
-    
+
     fig.update_layout(margin = dict(l = 50, r = 30, t = 20, b = 30, pad = 20),
                       legend = dict(x = 0.8, y = 1.1,
                                     itemclick = False,
                                     title = dict(text = 'Transportation Types:',
                                                  side = 'top',
-                                                 font = dict(family = 'Arial', 
+                                                 font = dict(family = 'Arial',
                                                              size = 18)),
                                     orientation="h",
-                                    font = dict(family = 'Arial', 
+                                    font = dict(family = 'Arial',
                                                 size = 15)
                                   ),
                       font = dict(family = 'Arial',
@@ -206,28 +203,18 @@ def add_trend(country, trend, forecast, include_forecast, start_date, end_date):
                                         font = dict(family = 'Arial',
                                                     size = 15))
                      )
-    
+
     return fig
 
 #---------------------------------------------------------------------------------------------
 
-# define bucket name
-bucket = "applemobilitytrends"
-# define s3 client
-s3 = boto3.client('s3') 
-# define file names
-historical_file_name = 'applemobilitytrends.csv'
-forecast_file_name = 'forecasted_trends.csv'
-# load historical data from s3
-data_obj = s3.get_object(Bucket= bucket, Key= historical_file_name) 
-trend_data = pd.read_csv(data_obj['Body'], 
+trend_data = pd.read_csv('./data/applemobilitytrends.csv',
                          low_memory = False)
 trends_countries, country_names = clean_data(trend_data)
-# load forecasted data from s3
-data_obj = s3.get_object(Bucket= bucket, Key= forecast_file_name)
-forecast_countries = pd.read_csv(data_obj['Body'], 
+
+forecast_countries = pd.read_csv('./data/forecasted_trends.csv',
                                  parse_dates = True,
-                                 header = [0,1], 
+                                 header = [0,1],
                                  index_col = 0)
 
 # convert index to string for both historical and forecasted data
@@ -241,8 +228,8 @@ forecast_countries.index = forecast_countries_index
 # define most recent trend by taking the mean of transportation types
 most_recent_trends = [trends_countries[c].iloc[-1, :].mean().round(2) for c in country_names]
 hover_df_colname  = 'Avg % Change on: ' + trends_countries.index[-1]
-hover_df = pd.DataFrame(data = np.array(most_recent_trends)/100, 
-                        index = country_names, 
+hover_df = pd.DataFrame(data = np.array(most_recent_trends)/100,
+                        index = country_names,
                         columns = [hover_df_colname])
 # hover_df = hover_df.transpose()
 # use reversed color scale for map
@@ -273,11 +260,11 @@ fig_map.update_layout(margin = {"l":50,"r":20,"t":20,"b":20},
                                                   size = 15)
                                       ),
                       coloraxis = dict(colorbar = dict(title = dict(text = '',
-                                                                    font = dict(family = 'Arial', 
+                                                                    font = dict(family = 'Arial',
                                                                                 size = 18),
                                                                     side = 'right'
                                                                   ),
-                                                      x = 1, 
+                                                      x = 1,
                                                       tickformat = '%{n}f',
                                                       tickwidth = 100
                                                       )
@@ -295,7 +282,7 @@ app.layout = html.Div(style={'backgroundColor': 'rgb(17,17,17)'}, children = [
                 style = {'color':'white',
                          'font-family':'Helvetica',
                          'font-size': '85px',
-                         'width':'30%', 
+                         'width':'30%',
                          'display': 'inline-block',
                          'vertical-align': 'middle',
                          'margin-left': '50px',
@@ -310,26 +297,30 @@ app.layout = html.Div(style={'backgroundColor': 'rgb(17,17,17)'}, children = [
                           'vertical-align': 'middle',
                           'align': 'left'})
     ]),
-    
+
     html.Div(style={'backgroundColor': 'rgb(17,17,17)'}, children = [
         html.Div('Include a 30-Day Forecast: ',
                  style = {'color':'white',
                           'font-family':'Helvetica',
                           'font-size': '20px',
                           'textAlign': 'right',
-                          'width':'20%', 
-                          'display': 'inline-block'}),
+                          'width':'20%',
+                          'display': 'inline-block',
+                          # 'display':'none' ##### hide component #####
+                          }),
         dcc.RadioItems(id = 'include_forecast',
                       options = [{'label': " " + i, 'value': i} for i in available_trends],
                       value = 'No',
                       labelStyle = {'display': 'inline-block', 'cursor': 'pointer', 'margin-right': '30px'},
-                      style = {'color':'white',
+                      style = {
+                                'color':'white',
                                 'font-family':'Helvetica',
                                 'font-size': '20px',
                                 'textAlign': 'left',
                                 'width':'30%',
                                 'display': 'inline-block',
-                                'margin-left': '30px'
+                                'margin-left': '30px',
+                                # 'display':'none' ##### hide component #####
                                 }),
         dcc.DatePickerRange(id = 'select_date',
                             clearable = True,
@@ -341,11 +332,13 @@ app.layout = html.Div(style={'backgroundColor': 'rgb(17,17,17)'}, children = [
                             min_date_allowed = trends_countries.index[0],
                             display_format = 'Y-M-D',
                             style = {'font-family':'Helvetica',
-                                     'align': 'center',
+                                     'Align': 'center',
                                      'display': 'inline-block',
-                                     'margin-left': '20px'})
+                                     'margin-left': '20px',
+                                     # 'width':'73%',
+                                     })
     ]),
-    
+
     html.Div(children = [
         html.Div(style = {'width':'2.5%',
                           'display': 'inline-block'}),
@@ -355,8 +348,8 @@ app.layout = html.Div(style={'backgroundColor': 'rgb(17,17,17)'}, children = [
         html.Div(style = {'width':'2.5%',
                           'display': 'inline-block'})
     ]),
-    html.Div(children = [ 
-        dcc.Markdown(children = ['Data sourced from [Apple Mobility Trends Reports](https://covid19.apple.com/mobility)'], 
+    html.Div(children = [
+        dcc.Markdown(children = ['Data sourced from [Apple Mobility Trends Reports](https://covid19.apple.com/mobility)'],
                      style = {'color':'white',
                               'font-family':'Helvetica',
                               'font-size': '12px',
@@ -366,9 +359,9 @@ app.layout = html.Div(style={'backgroundColor': 'rgb(17,17,17)'}, children = [
                               'display': 'inline-block'}),
         dcc.Markdown(children = ['''
                                  These graphs are interactive and responsive. **Hover** over points to see their values,
-                                 
+
                                  **click** and **drag** to zoom, **hold down** shift, and **click** and **drag** to pan.
-                                 '''], 
+                                 '''],
                      style = {'color':'white',
                               'font-family':'Helvetica',
                               'font-size': '13px',
@@ -377,7 +370,7 @@ app.layout = html.Div(style={'backgroundColor': 'rgb(17,17,17)'}, children = [
                               'margin-left': '10px',
                               'margin-right': '10px',
                               'display': 'inline-block'}),
-        dcc.Markdown(children = ['Designed and developed by [Michael Tang](http://www.linkedin.com/in/mtang0728)'], 
+        dcc.Markdown(children = ['Designed and developed by [Michael Tang](http://www.linkedin.com/in/mtang0728)'],
                      style = {'color':'white',
                               'font-family':'Helvetica',
                               'font-size': '12px',
@@ -407,17 +400,17 @@ def update_datepicker_range(radioitem_value):
         # fix 1-day-short bug with the max_date_allowed property by adding 1 day
         max_date = datetime.strptime(forecast_countries.index[-1], '%Y-%m-%d')
         max_date = (max_date + delta).strftime('%Y-%m-%d')
-        
+
         return max_date, forecast_countries.index[-1], trends_countries.index[0]
     else:
         # fix 1-day-short bug with  the max_date_allowed property by adding 1 day
         max_date = datetime.strptime(trends_countries.index[-1], '%Y-%m-%d')
         max_date = (max_date + delta).strftime('%Y-%m-%d')
-        
+
         return max_date, trends_countries.index[-1], trends_countries.index[0]
 
-# callback for updating graph component based on selected country on map, 
-# include_forecast radioitem, and date range on datepicker 
+# callback for updating graph component based on selected country on map,
+# include_forecast radioitem, and date range on datepicker
 @app.callback(
     Output(component_id = 'trend', component_property = 'figure'),
     [Input(component_id = 'world_map', component_property = 'hoverData'),
@@ -433,9 +426,9 @@ def update_trend(map_value, radioitem_value, datepicker_start, datepicker_end):
     # rename input variables
     start_time = datepicker_start
     end_time = datepicker_end
-    
-    return add_trend(country, trends_countries, forecast_countries, 
+
+    return add_trend(country, trends_countries, forecast_countries,
                      include_forecast, start_time, end_time)
 
 if __name__ == '__main__':
-    application.run_server()
+    app.run_server(debug = True)
