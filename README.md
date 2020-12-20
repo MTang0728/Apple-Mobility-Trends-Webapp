@@ -1,12 +1,12 @@
 # Apple-Mobility-Trends-Webapp
-![fig1](https://covid19-static.cdn-apple.com/applications/covid19-mobility/current/static/og_image_v1.png)
+![fig1](./resources/mobility_trends.png)
 
 ## Intro:
-Apple has been actively supporting the mitigation of the spread of COVID-19 global pandemic. It had partnered with The Centers for Disease Control and Prevention (CDC) in effort to rasie safety awareness and to develop screenning tools. Additionally, it publishes a daily [COVID-19 Mobility Trends Report](https://covid19.apple.com/mobility) through data it collects from Apple Maps. However, the report's simple interface provides no more functionalities than just a quick location search to find corresponding mobility trends. Therefore, I developed a dashboard web application to help improve data interactivity and interpretability. 
+Apple has been actively supporting the mitigation of the spread of COVID-19 global pandemic. It had partnered with The Centers for Disease Control and Prevention (CDC) in effort to raise safety awareness and to develop screening tools. Additionally, it publishes a daily [COVID-19 Mobility Trends Report](https://covid19.apple.com/mobility) through data it collects from Apple Maps. However, the report's simple interface provides no more functionalities than just a quick location search to find corresponding mobility trends. Therefore, I developed a dashboard web application to help improve data interactivity and interpretability.
 
-To access the Apple Mobility Trends Dashboard, click on this [**link**](http://apple-trends-dash-env.eba-fii2naf3.us-east-1.elasticbeanstalk.com).
+To access the Apple Mobility Trends Dashboard, click this [**link**](http://apple-trends-dash-env.eba-fii2naf3.us-east-1.elasticbeanstalk.com).
 
-This web appplication is built using Plotly Dash framework. Both the frontend and backend operate entirely on a serverless data pipeline. This dashboard is currently deployed on AWS. For more detail on the pipeline infrastructure, refer to the Cloud Architecture section below.
+This web application is built using Plotly Dash framework. Both the frontend and backend operate entirely on a serverless data pipeline. My dashboard is currently deployed on AWS. For more detail on the pipeline infrastructure, refer to the Cloud Architecture section below.
 
 ## Features:
 The Apple Mobility Trends Dashboard currently contains 3 components that users could interact with:
@@ -33,7 +33,7 @@ The Apple Mobility Trends Dashboard currently contains 3 components that users c
 
 ### Trends:
 * Trends represents mobility % change for each available transportation type across the selected period.
-* Hoever over the lines to view the values.
+* Hover over the lines to view the values.
 * Press shift, click and drag to pan around.
 * Click and drag to Zoom.
 
@@ -53,9 +53,9 @@ The Apple Mobility Trends Dashboard currently contains 3 components that users c
 
  * Dash
  * Facebook Prophet: for forecasting (currently available in offline mode only)
- 
+
 ## Cloud Architecture：
- 
+
 The process and workflow of this data pipeline can be summarized in the figure below:
 
 ![fig5](./resources/AWS_Flowchart.png)
@@ -66,7 +66,6 @@ A Lambda function is designed to download Apple's Mobility Trends Report and sav
 
 I originally designed this dashboard that also supported a 30-day forecasting, which was implemented using Facebook Prophet. However, I had trouble installing Prophet in Cloud9, this feature was therefore not deployed in current version. Feel free to try it by running application.py located in the root directory.
 
+* Check Yes to inlude forecasted trends, No to display historical trends only.
+
 ![fig6](./resources/with_forecast.gif)
-
-
-

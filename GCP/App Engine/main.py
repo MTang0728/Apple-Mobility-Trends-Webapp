@@ -215,13 +215,13 @@ bucket = "applemobilitydata"
 historical_file_name = 'applemobilitytrends.csv'
 forecast_file_name = 'forecasted_trends.csv'
 # load historical data from s3
-historical_file_path = "gs://{}/{}".format(bucket, historical_file_name)
+historical_file_path = 'https://storage.googleapis.com/applemobilitydata/applemobilitytrends.csv'
 trend_data = pd.read_csv(historical_file_path,
                         # './data/applemobilitytrends.csv', #### for offline testing ####
                          low_memory = False)
 trends_countries, country_names = clean_data(trend_data)
 # load forecasted data from s3
-forecast_file_path = "gs://{}/{}".format(bucket, forecast_file_name)
+forecast_file_path = 'https://storage.googleapis.com/applemobilitydata/forecasted_trends.csv'
 forecast_countries = pd.read_csv(forecast_file_path,
                                 # './data/forecasted_trends.csv', #### for offline testing ####
                                  parse_dates = True,
@@ -287,7 +287,7 @@ fig_map.update_layout(margin = {"l":50,"r":20,"t":20,"b":20},
 available_trends = ['No', 'Yes']
 
 # define dashboard layout
-dash_app.layout = html.Div(style={'backgroundColor': 'rgb(17,17,17)'}, children = [
+app.layout = html.Div(style={'backgroundColor': 'rgb(17,17,17)'}, children = [
     html.Div(style={'backgroundColor': 'rgb(17,17,17)'}, children = [
         html.H1('Apple Mobility Trends Dashboard',
                 style = {'color':'white',
@@ -441,4 +441,4 @@ def update_trend(map_value, radioitem_value, datepicker_start, datepicker_end):
                      include_forecast, start_time, end_time)
 
 if __name__ == '__main__':
-    app.run_server(host='0.0.0.0', port=8080, debug=True, use_reloader=False)
+    app.run_server()
