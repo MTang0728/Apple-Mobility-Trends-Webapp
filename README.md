@@ -12,7 +12,7 @@ This web application is built using Plotly Dash framework. Both the frontend and
 The Apple Mobility Trends Dashboard currently contains 3 components that users could interact with:
 
 * **Map:** for location selection (note that the dashboard only supports country-level selection).
-* **Datepicker:** for data/period selection.
+* **Datepicker:** for date/period selection.
 * **Trends:** for trend visualization.
 
 ### Map:
