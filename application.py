@@ -33,6 +33,8 @@ def clean_data(trends):
     trends = trends.rename({'region': 'country'}, axis = 1)
     # get country names
     country_names = trends['country'].unique()
+    # remove Untied Arab Emirates
+    country_names = [country for country in country_names if country != 'United Arab Emirates']
     # set hierarchical index
     trends.set_index(['country', 'transportation_type'], inplace = True)
     # get difference from baseline
